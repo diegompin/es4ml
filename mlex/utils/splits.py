@@ -1,7 +1,15 @@
-
+import pandas as pd
 class PastFutureSplit:
 
-    def train_test_split(X, y, proportion=.5):
+    def __init__(self) -> None:
+        super().__init__()
+
+
+    def csv_extraction(self,path):
+        df = pd.read_csv(path, delimiter=';')
+        return df
+
+    def train_test_split(self, X, y, proportion=.5):
         mid = int(proportion *len(X))
         X_train = X[:mid]
         y_train = y[:mid]

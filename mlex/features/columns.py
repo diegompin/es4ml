@@ -39,7 +39,7 @@ class CompositeTranformer(BaseEstimator, TransformerMixin):
         super().__init__()
         self.numberic_feature = numeric_features
         self.categorical_features = categorical_features
-        self.encoder =  ColumnTransformer(
+        self.encoder =  ColumnTransformer(    #o que seria Column transformer?
             transformers=[
                 ("num", NumericalTransfomer(), self.numberic_feature),
                 ("cat", CategoricalOneHotTransfomer(), self.categorical_features),
