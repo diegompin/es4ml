@@ -13,8 +13,8 @@ from sklearn.pipeline import (
 ) 
 from functools import reduce
 from mlex import (
-    NumbericlTransfomer,
-    CategoricaOneHotlTransfomer,
+    NumericalTransfomer,
+    CategoricalOneHotTransfomer,
     CompositeTranformer
 )
 
@@ -32,8 +32,7 @@ class SimplePipeline(BaseEstimator, ClassifierMixin):
                  numeric_features, 
                  categorical_features,
                  final_model,   #o que seria esse final mode? um exemplo?
-                 epochs=10,
-                #  input_shape,
+                 epochs=10, #input_shape
                  ) -> None:
         super().__init__()
         self.numberic_feature = numeric_features
@@ -76,9 +75,9 @@ class SimplePipeline(BaseEstimator, ClassifierMixin):
         sequence = SequenceTransfomer()
         model = Pipeline(
             steps=[
-                ("Data Extraction", data_extraction)
+                ("Data Extraction", data_extraction),
                 ("preprocessing", preprocessor),
-                ("sequence", sequence)
+                ("sequence", sequence),
                 ("final_model", self.final_model),
                 ]
             )
