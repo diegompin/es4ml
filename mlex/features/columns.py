@@ -43,7 +43,8 @@ class CompositeTranformer(BaseEstimator, TransformerMixin):
             transformers=[
                 ("num", NumericalTransfomer(), self.numberic_feature),
                 ("cat", CategoricalOneHotTransfomer(), self.categorical_features),
-            ])
+            ]
+        )
         
     def fit(self, X, y=None):
         return self
