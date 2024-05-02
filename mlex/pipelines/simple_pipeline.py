@@ -34,7 +34,7 @@ class SimplePipeline(BaseEstimator, ClassifierMixin):
         super().__init__()
         self.numberic_feature = numeric_features
         self.categorical_features = categorical_features
-        self.final_model = final_model
+        self.final_model = final_model  #como que a gente já manda o modelo pronto pro pipeline? não era pro pipeline gerar o modelo?
         self.model = self._build_model()
 
     @property

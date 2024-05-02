@@ -32,7 +32,7 @@ class SimpleRNNModel(BaseModel):
             # keras.layers.Dense(32, activation='relu'),
             keras.layers.Dense(1, activation='sigmoid')
         ])
-        
+        model.build()   # CERTO???
         return model
     
 class SimpleLSTMModel(BaseModel):
