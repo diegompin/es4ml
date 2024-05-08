@@ -8,7 +8,19 @@ import abc
 class BaseModel(abc.ABC):
 
     @abc.abstractmethod
-    def get_model() -> keras.Sequential:
+    def get_model():
+        pass
+
+    @abc.abstractmethod
+    def compile():
+        pass
+
+    @abc.abstractmethod
+    def summary():
+        pass
+
+    @abc.abstractmethod
+    def fit(X, y=None):
         pass
 
 
@@ -19,7 +31,7 @@ class SimpleRNNModel(BaseModel):
         self.input_shape = input_shape
 
     def get_model(self) -> keras.Sequential:
-        model = keras.models.Sequential([
+        self.model = keras.models.Sequential([
             # keras.layers.SimpleRNN(),
             # keras.layers.GRU(32, dropout=0.1, recurrent_dropout=.5,  input_shape=[None, X.shape[-1]]),
             # keras.layers.Conv1D(8, 6, input_shape=[None, X.shape[-1]]),
@@ -30,11 +42,21 @@ class SimpleRNNModel(BaseModel):
             # keras.layers.Dense(32, activation='relu'),
             keras.layers.Dense(1, activation='sigmoid')
         ])
+        self.model.build()
+        return self.model
+    
 
-        return model
+    def compile(self):
+        return self.model.compile(loss='binary_crossentropy',
+              optimizer='rmsprop',
+              metrics=['acc', tf.keras.metrics.AUC()])
+    
+    def summary(self):
+        return self.model.summary()
     
     def fit(self, X, y=None):
-        return self.model.fit(X, y)
+        return self.model.fit(X, epochs=10)
+    
     
 class SimpleLSTMModel(BaseModel):
 
@@ -47,8 +69,19 @@ class SimpleLSTMModel(BaseModel):
             tf.keras.layers.LSTM(16, return_sequences=True, input_shape=self.input_shape),
             tf.keras.layers.Dense(1, activation='sigmoid')
         ])
-        
+        self.model.build()
         return model
+    
+    def compile(self):
+        return self.model.compile(loss='binary_crossentropy',
+              optimizer='rmsprop',
+              metrics=['acc', tf.keras.metrics.AUC()])
+    
+    def summary(self):
+        return self.model.summary()
+    
+    def fit(self, X, y=None):
+        return self.model.fit(X, epochs=10)
     
     
 class SimpleGruModel(BaseModel):
@@ -62,5 +95,16 @@ class SimpleGruModel(BaseModel):
             tf.keras.layers.GRU(16, return_sequences=True, input_shape = self.input_shape),
             tf.keras.layers.Dense(1,activation='sigmoid')
         ])
-
+        self.model.build()
         return model
+    
+    def compile(self):
+        return self.model.compile(loss='binary_crossentropy',
+              optimizer='rmsprop',
+              metrics=['acc', tf.keras.metrics.AUC()])
+    
+    def summary(self):
+        return self.model.summary()
+    
+    def fit(self, X, y=None):
+        return self.model.fit(X, epochs=10)

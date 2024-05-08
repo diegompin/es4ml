@@ -70,7 +70,7 @@ class EmbeedinglTransfomer(CustomTrasformer):
     
     def __init__(self) -> None:
         super().__init__()
-        # self.encoder = Embeding(handle_unknown="ignore")
+        # self.encoder = Embedding(handle_unknown="ignore")
         
     def fit(self, X, y=None):
         return self

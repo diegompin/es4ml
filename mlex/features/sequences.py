@@ -7,10 +7,7 @@ import tensorflow as tf
 
 class SequenceTransfomer(BaseEstimator, TransformerMixin):
     
-    def __init__(self, 
-                 sequence_length = 10,
-                 batch_size = 128
-                 ) -> None:
+    def __init__(self, sequence_length = 10, batch_size = 128) -> None:
         super().__init__()
         self.sequence_length = sequence_length
         self.batch_size = batch_size
