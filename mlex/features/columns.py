@@ -16,7 +16,7 @@ class CategoricalOneHotTransfomer(BaseEstimator, TransformerMixin):
         return self
     
     def transform(self, X, y=None, **fit_params):
-        Xt = self.encoder.fit_transform(X)
+        Xt = self.encoder.fit_transform(X).toarray()
         return Xt
     
 

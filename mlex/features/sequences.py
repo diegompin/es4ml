@@ -20,7 +20,7 @@ class SequenceTransfomer(BaseEstimator, TransformerMixin):
         return self
     
     def transform(self, X, y, **fit_params):
-        data_train = tf.keras.utils.timeseries_dataset_from_array(
+        data = tf.keras.utils.timeseries_dataset_from_array(
             # X[:-self.sequence_length],
             # y[self.sequence_length:],
             X,
@@ -34,7 +34,7 @@ class SequenceTransfomer(BaseEstimator, TransformerMixin):
             start_index=None,
             end_index=None,
         )
-        return data_train
+        return data
 
 
 
