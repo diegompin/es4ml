@@ -29,7 +29,7 @@ class SequenceTransfomer(BaseEstimator, TransformerMixin):
             sequence_stride=1,
             sampling_rate=1,
             batch_size=self.batch_size,
-            shuffle=False,
+            shuffle=False, #mistura de dados
             seed=None,
             start_index=None,
             end_index=None,
