@@ -37,13 +37,16 @@ class SimplePipeline(BaseEstimator, ClassifierMixin):
                  categorical_features,
                  df,
                  y,
+                 final_model,
                  epochs=10, 
                 ) -> None:
         super().__init__()
-        self.numberic_feature = numeric_features
+        self.numeric_features = numeric_features
         self.categorical_features = categorical_features
         self.df = df
         self.y = y
+        self.final_model = final_model
+        self.epochs = epochs
         self.model = self._build_model()
 
     @property
@@ -51,13 +54,13 @@ class SimplePipeline(BaseEstimator, ClassifierMixin):
         return __name__
         
     def fit(self, X, y=None):
-        return self.model.fit(X, y)
+        return self.final_model.fit(X, y)
 
     def predict(self, X):
-        return self.model.predict(X)
+        return self.final_model.predict(X)
 
     def score_samples(self, X):
-        return self.model.score_samples(X=X)
+        return self.final_model.score_samples(X=X)
     
     def plot_matrix(self,y_test,y_pred)->None: 
         sequence_length = 5
@@ -112,10 +115,12 @@ class SimplePipeline(BaseEstimator, ClassifierMixin):
         )
 
     def _build_model(self):
-    
+        
+        self.final_model.get_model()
+        self.final_model.compile() 
 
         preprocessor = CompositeTranformer(
-            numeric_features=self.numberic_feature, 
+            numeric_features=self.numeric_features, 
             categorical_features=self.categorical_features
         )
 
@@ -139,10 +144,7 @@ class SimplePipeline(BaseEstimator, ClassifierMixin):
         sequence  = self.make_sequence()
         
 
-        #isso aqui, pode tirar do pipeline
-        self.final_model = SimpleRNNModel(input_shape=Xt.shape)
-        self.final_model.get_model()
-        self.final_model.compile()
+       
         
         self.history = self.final_model.fit(self.data_train)
 

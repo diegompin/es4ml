@@ -57,22 +57,51 @@ class SimpleLSTMModel(BaseModel):
 
     def get_model(self) -> keras.Sequential:
 
-        model = tf.keras.Sequential([
+        self.model = tf.keras.Sequential([
             tf.keras.layers.LSTM(16, return_sequences=True, input_shape=self.input_shape),
             tf.keras.layers.Dense(1, activation='sigmoid')
         ])
-        
-        return model
+
+        self.model.build()  
+        return self.model
+    
+    def compile(self):
+        return self.model.compile(loss='binary_crossentropy',
+              optimizer='rmsprop',
+              metrics=['acc', tf.keras.metrics.AUC()])
+    
+    def summary(self):
+        return self.model.summary()
+    
+    def fit(self, X, y=None): #se eu colocar y, fica supervisionado?
+        return self.model.fit(X, epochs=10)
+    
+    def predict(self,X, y=None):
+        return self.model.predict(X)
     
 class SimpleGruModel(BaseModel):
     def __init__(self,input_shape)-> None:
         super().__init__()
         self.input_shape = input_shape
 
-    def get_mode(self,input)->keras.Sequential:
-        model = tf.keras.Sequential([
+    def get_model(self)->keras.Sequential:
+        self.model = tf.keras.Sequential([
             tf.keras.layers.GRU(16, return_sequences=True, input_shape = self.input_shape),
             tf.keras.layers.Dense(1,activation='sigmoid')
         ])
-
-        return model
+        self.model.build()
+        return self.model
+    
+    def compile(self):
+        return self.model.compile(loss='binary_crossentropy',
+              optimizer='rmsprop',
+              metrics=['acc', tf.keras.metrics.AUC()])
+    
+    def summary(self):
+        return self.model.summary()
+    
+    def fit(self, X, y=None): #se eu colocar y, fica supervisionado?
+        return self.model.fit(X, epochs=10)
+    
+    def predict(self,X, y=None):
+        return self.model.predict(X)
