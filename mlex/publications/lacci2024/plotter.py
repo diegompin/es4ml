@@ -13,7 +13,7 @@ class Plotter():
                 ax.text(x=j, y=i,s=conf_matrix[i, j], va='center', ha='center', size='xx-large')
         plt.xlabel('Predictions', fontsize=18)
         plt.ylabel('Actuals', fontsize=18)
-        plt.title( f"{next(name_cycler)} Confusion Matrix" , fontsize=18)
+        plt.title( f"{next(name_cycler)}" , fontsize=18)
         if filename:
             plt.savefig(filename)
         else:
