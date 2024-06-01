@@ -47,7 +47,7 @@ class testSimpleRnn():
         pipe = SimplePipeline(
             numeric_features = columns_num, 
             categorical_features = columns_cat,
-            df = df,
+            X = df,
             y = y,
         )
         
