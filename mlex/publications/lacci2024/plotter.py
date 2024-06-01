@@ -4,7 +4,7 @@ import numpy as np
 
 class Plotter():
 
-    def plot_matrix(self, y_true, y_pred, filename=None)->None: 
+    def plot_matrix(self, y_true, y_pred, name_cycler ,filename=None)->None: 
         conf_matrix = confusion_matrix(y_true=y_true, y_pred=y_pred)
         fig, ax = plt.subplots(figsize=(4, 4))
         ax.matshow(conf_matrix, cmap=plt.cm.Blues, alpha=0.3)
@@ -13,7 +13,7 @@ class Plotter():
                 ax.text(x=j, y=i,s=conf_matrix[i, j], va='center', ha='center', size='xx-large')
         plt.xlabel('Predictions', fontsize=18)
         plt.ylabel('Actuals', fontsize=18)
-        plt.title('Confusion Matrix', fontsize=18)
+        plt.title( f"{next(name_cycler)} Confusion Matrix" , fontsize=18)
         if filename:
             plt.savefig(filename)
         else:
