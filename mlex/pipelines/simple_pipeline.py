@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import keras
+import keras.layers
+import keras.optimizers.adam
 import os
 import sys
 
@@ -38,7 +41,7 @@ class SimplePipeline(BaseEstimator, ClassifierMixin):
                 #  X,
                 #  y,
                  final_model,
-                 epochs=10, 
+                #  epochs=10, 
                 ) -> None:
         super().__init__()
         # self.numeric_features = numeric_features
@@ -46,16 +49,19 @@ class SimplePipeline(BaseEstimator, ClassifierMixin):
         # self.X = X
         # self.y = y
         self.final_model = final_model
-        self.epochs = epochs
+        # self.epochs = epochs
         self.pipeline = self._build_pipeline()
 
     @property
     def name(self):
         return __name__
         
-    def fit(self, X, y=None):
+    def fit(self, X, y=None, **fit_params):
+        
         return self.pipeline.fit(X, y, 
-                                 final_model__epochs = self.epochs)
+                                 final_model__epochs = self.epochs,
+                                #  final_model__callbacks = [callback],
+                                 **fit_params)
 
     def predict(self, X):
         return self.pipeline.predict(X)

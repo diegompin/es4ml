@@ -9,7 +9,7 @@ class SequenceTransfomer(BaseEstimator, TransformerMixin):
     
     def __init__(self, 
                  sequence_length = 10,
-                 batch_size = 128
+                 batch_size = 32
                  ) -> None:
         super().__init__()
         self.sequence_length = sequence_length

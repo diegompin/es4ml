@@ -26,8 +26,8 @@ class BaseModel(abc.ABC):
     def summary(self):
         return self.model.summary()
     
-    def fit(self, X, y=None):
-        return self.model.fit(X, epochs=10)
+    def fit(self, X, y=None, **fit_params):
+        return self.model.fit(X, y, **fit_params)
     
     def predict(self,X, y=None):
         return self.model.predict(X)
@@ -40,8 +40,10 @@ class SimpleRNNModel(BaseModel):
 
     def build_model(self) -> keras.Sequential:
         self.model = keras.models.Sequential([
-            keras.layers.SimpleRNN(16,  return_sequences=True, input_shape=self.input_shape),
-            keras.layers.SimpleRNN(16),
+            # keras.layers.SimpleRNN(16,  return_sequences=True, input_shape=self.input_shape),
+            # keras.layers.SimpleRNN(16,  return_sequences=True, input_shape=self.input_shape),
+            keras.layers.SimpleRNN(10, return_sequences=True ,input_shape=self.input_shape),
+            keras.layers.SimpleRNN(10,),
             keras.layers.Dense(1, activation='sigmoid')
         ])    
    
@@ -55,8 +57,10 @@ class SimpleLSTMModel(BaseModel):
     def build_model(self) -> keras.Sequential:
 
         self.model = tf.keras.Sequential([
-            tf.keras.layers.LSTM(16, return_sequences=True, input_shape=self.input_shape),
-             tf.keras.layers.LSTM(16),
+            # tf.keras.layers.LSTM(16, return_sequences=True, input_shape=self.input_shape),
+            #  tf.keras.layers.LSTM(16),
+            tf.keras.layers.LSTM(10,return_sequences=True, input_shape=self.input_shape),
+            tf.keras.layers.LSTM(10,),
             tf.keras.layers.Dense(1, activation='sigmoid')
         ])
    
@@ -69,7 +73,9 @@ class SimpleGruModel(BaseModel):
 
     def build_model(self) ->keras.Sequential:
         self.model = tf.keras.Sequential([
-            tf.keras.layers.GRU(16, return_sequences=True, input_shape = self.input_shape),
-            tf.keras.layers.GRU(16),
+            # tf.keras.layers.GRU(10, return_sequences=True, input_shape = self.input_shape),
+            # tf.keras.layers.GRU(16),
+            tf.keras.layers.GRU(10,return_sequences=True, input_shape = self.input_shape),
+            tf.keras.layers.GRU(10, ),
             tf.keras.layers.Dense(1,activation='sigmoid')
         ])
