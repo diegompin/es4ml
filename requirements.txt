@@ -3,3 +3,4 @@ ipykernel
 matplotlib
 numpy
 scikit-learn
+networkx
