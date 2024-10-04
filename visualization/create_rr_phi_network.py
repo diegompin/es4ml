@@ -22,6 +22,17 @@ class FileManager:
     def save_graphml(graph, path):
         nx.write_graphml(graph, path)
 
+    @staticmethod
+    def save_arrays_to_zip_as_csv(arrays, filenames, dir_path, zip_filename='arrays.zip'):
+        zip_path = os.path.join(dir_path, zip_filename)
+
+        with zipfile.ZipFile(zip_path, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
+            for array, filename in zip(arrays, filenames):
+                csv_path = str(os.path.join(dir_path, filename + '.csv'))
+                np.savetxt(csv_path, np.asarray(array), delimiter=',', fmt='%.2f')
+                zipf.write(csv_path, arcname=filename + '.csv')
+                os.remove(csv_path)
+
 
 class DataPreparer:
     """Handles data preparation for network analysis."""
@@ -266,8 +277,8 @@ class NetworkCoOccurrence:
 
 if __name__ == '__main__':
     # Setting up paths and parameters
-    data_path = os.path.abspath(os.path.join(os.path.join(PROJECT_ROOT, '../../..'), 'pcpe'))
-    year = '2020' # or 'all' for all years
+    data_path = os.path.abspath(os.path.join(PROJECT_ROOT, '../../..', 'pcpe'))
+    year = '2020' # or 'all', '' for all years
     output_path = os.path.join(PROJECT_ROOT, year)
 
     # Ensuring the output directory exists
@@ -283,7 +294,7 @@ if __name__ == '__main__':
     # Getting the network
     min_subjects = 5
     min_occurrences = 2
-    net_type = 'high'  # or 'less' depending on what type of network you want
+    net_type = 'high'  # or 'less', 'all' depending on what type of network you want
 
     C, CC, RR_graph, RR_dist, G_rr, Phi_graph, Phi_dist, G_phi = network_generator.get_network(
         labels=contas,
@@ -295,6 +306,9 @@ if __name__ == '__main__':
         net_type=net_type
     )
 
-    nx.write_graphml(G_rr, os.path.join(output_path, 'network_graph_rr.graphml'))
-    nx.write_graphml(G_phi, os.path.join(output_path, 'network_graph_phi.graphml'))
+    FileManager.save_arrays_to_zip_as_csv([C.toarray(), CC.toarray(), RR_graph, RR_dist, Phi_graph, Phi_dist],
+                                          ['C', 'CC', 'RR_graph', 'RR_dist', 'Phi_graph', 'Phi_dist'],
+                                          output_path)
+    FileManager.save_graphml(G_rr, os.path.join(output_path, 'network_graph_rr.graphml'))
+    FileManager.save_graphml(G_phi, os.path.join(output_path, 'network_graph_phi.graphml'))
     print("Network saved successfully.")
