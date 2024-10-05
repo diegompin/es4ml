@@ -278,7 +278,7 @@ class NetworkCoOccurrence:
 if __name__ == '__main__':
     # Setting up paths and parameters
     data_path = os.path.abspath(os.path.join(PROJECT_ROOT, '../../../..', 'pcpe'))
-    year = '2019' # or 'all', '' for all years
+    year = '2022' # or 'all', '' for all years
     output_path = os.path.join(PROJECT_ROOT, year)
 
     # Ensuring the output directory exists
