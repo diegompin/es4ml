@@ -151,6 +151,20 @@ class DefaultGraphStrategy(IGraphStrategy):
         }
         nx.set_node_attributes(G, node_attrs)
 
+        edge_attrs = {}
+        for _, row in df_pair_count.iterrows():
+            conta_origem = row['CONTA_ORIGEM']
+            conta_destino = row['CONTA_DESTINO']
+            valor_coluna_1 = row['1']
+
+            if conta_origem in L and conta_destino in L:
+                idx_origem = L.index(conta_origem)
+                idx_destino = L.index(conta_destino)
+                 
+                edge_attrs[(idx_origem, idx_destino)] = {'transacoes_Id_entre_contas': valor_coluna_1}
+        nx.set_edge_attributes(G, edge_attrs)
+
+
 
 class NetworkCoOccurrence:
     """Handles co-occurrence network generation using strategies."""
@@ -278,7 +292,7 @@ class NetworkCoOccurrence:
 if __name__ == '__main__':
     # Setting up paths and parameters
     data_path = os.path.abspath(os.path.join(PROJECT_ROOT, '../../..', 'pcpe'))
-    year = '2020' # or 'all', '' for all years
+    year = '2016' # or 'all', '' for all years
     output_path = os.path.join(PROJECT_ROOT, year)
 
     # Ensuring the output directory exists
