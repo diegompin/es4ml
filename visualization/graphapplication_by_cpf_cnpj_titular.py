@@ -2,9 +2,13 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import networkx as nx
+import os
 from os.path import exists
 from os import makedirs
 from tqdm import tqdm
+
+
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 class DataLoader:
@@ -122,7 +126,8 @@ class GraphApplication:
             nx.write_graphml(graph, f'{save_dir}/graph_output_{cpf}.graphml')
 
 
-path = '/data/pcpe_02.csv'
+path = os.path.abspath(os.path.join(PROJECT_ROOT, '../../..', 'pcpe', 'pcpe_02.csv'))
+# path = '/data/pcpe_02.csv'
 save_dir = 'visualization/outputs'
 data_loader = DataLoader(path)
 graph_builder = GraphBuilder()

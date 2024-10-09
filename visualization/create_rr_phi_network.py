@@ -1,11 +1,16 @@
 import os
 import zipfile
+import warnings
 import pandas as pd
 import numpy as np
 import networkx as nx
 from scipy.sparse import coo_matrix
 from itertools import compress
 from abc import ABC, abstractmethod
+from tqdm import tqdm
+
+
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -133,9 +138,9 @@ class DefaultGraphStrategy(IGraphStrategy):
 
     def put_attributes(self, G, P, L, metric, df_count, df_pair_count):
         df_count = df_count[df_count['CONTA'].isin(L)]
-        filtered_df_pair_count = df_pair_count[
-            df_pair_count['CONTA_ORIGEM'].isin(L) | df_pair_count['CONTA_DESTINO'].isin(L)
-        ]
+        # filtered_df_pair_count = df_pair_count[
+        #     df_pair_count['CONTA_ORIGEM'].isin(L) | df_pair_count['CONTA_DESTINO'].isin(L)
+        # ]
 
         metric_sums = np.sum(metric, axis=1)
 
@@ -165,6 +170,48 @@ class DefaultGraphStrategy(IGraphStrategy):
         nx.set_edge_attributes(G, edge_attrs)
 
 
+class DefaultGraphRandomStrategy(IGraphStrategy):
+    """Concrete implementation of graph generation."""
+    def create_graph(self, matrix, P, L, df_count, df_pair_count):
+        G = nx.from_numpy_array(matrix)
+        self.put_attributes(G, P, L, matrix, df_count, df_pair_count)
+        return G
+
+    def put_attributes(self, G, P, L, metric, df_count, df_pair_count):
+        df_count = df_count[df_count['CONTA'].isin(L)]
+        df_count = self.randomize_attribute(df_count, '1')
+        # filtered_df_pair_count = df_pair_count[
+        #     df_pair_count['CONTA_ORIGEM'].isin(L) | df_pair_count['CONTA_DESTINO'].isin(L)
+        # ]
+
+        metric_sums = np.sum(metric, axis=1)
+
+        node_attrs = {
+            i: {
+                'prevalence': int(P[i]),
+                'sum_metric': float(metric_sums[i]),
+                'label': L[i],
+                'quantity_i-d': int(df_count.loc[df_count['CONTA'] == L[i], '1'].values[0])
+                if not df_count[df_count['CONTA'] == L[i]].empty else 0
+            }
+            for i in G.nodes
+        }
+        nx.set_node_attributes(G, node_attrs)
+
+    @staticmethod
+    def randomize_attribute(df, column_name):
+        column_values = df[column_name].values
+
+        num_zeros = np.sum(column_values == 0)
+        num_non_zeros = len(column_values) - num_zeros
+
+        new_non_zero_values = np.random.randint(1, np.max(column_values) + 1, size=num_non_zeros)
+        randomized_values = np.concatenate([np.zeros(num_zeros, dtype=column_values.dtype), new_non_zero_values])
+        np.random.shuffle(randomized_values)
+
+        df.loc[:, column_name] = randomized_values
+        return df
+
 
 class NetworkCoOccurrence:
     """Handles co-occurrence network generation using strategies."""
@@ -184,7 +231,7 @@ class NetworkCoOccurrence:
 
         G_phi = self.graph_strategy.create_graph(Phi_graph, P, L, df_count, df_pair_count)
 
-        return C, CC, RR_graph, RR_dist, G_rr, Phi_graph, Phi_dist, G_phi
+        return C, CC, RR_graph, RR_dist, G_rr, Phi_graph, Phi_dist, G_phi, P, L
 
     def get_cooccurrence(self, occurrence, L, min_subjects=5, min_occurrences=2):
         column_sums = occurrence.sum(axis=0).A1
@@ -292,37 +339,48 @@ class NetworkCoOccurrence:
 if __name__ == '__main__':
     # Setting up paths and parameters
     data_path = os.path.abspath(os.path.join(PROJECT_ROOT, '../../..', 'pcpe'))
-    year = '2016' # or 'all', '' for all years
-    output_path = os.path.join(PROJECT_ROOT, year)
-
-    # Ensuring the output directory exists
-    FileManager.create_dir(output_path)
-
-    print("Preparing data...")
-    contas, df_count, df_pair_count, sparse_matrix = DataPreparer.prepare_dataframe(data_path, year)
-
-    print("Generating co-occurrence network...")
-    graph_strategy = DefaultGraphStrategy()
-    network_generator = NetworkCoOccurrence(graph_strategy)
-
-    # Getting the network
+    # year = '2020' # or 'all', '' for all years
+    random_i_d = True
     min_subjects = 5
     min_occurrences = 2
-    net_type = 'high'  # or 'less', 'all' depending on what type of network you want
+    net_types = ['high', 'less', 'all']  # or 'less', 'all' depending on what type of network you want
+    years = [str(year) for year in range(2015,2023)] #+ ['all']
+    for net_type in tqdm(net_types, desc='Creating Graphs', unit='Net_Type'):
+        for year in tqdm(years, desc='Creating Graphs', unit='Year'):
+            output_path = os.path.join(
+                PROJECT_ROOT, f'{net_type}_{min_subjects}_{min_occurrences}_{year}{"_random5" if random_i_d else ""}')
 
-    C, CC, RR_graph, RR_dist, G_rr, Phi_graph, Phi_dist, G_phi = network_generator.get_network(
-        labels=contas,
-        occurrences=sparse_matrix,
-        df_count=df_count,
-        df_pair_count=df_pair_count,
-        min_subjects=min_subjects,
-        min_occurrences=min_occurrences,
-        net_type=net_type
-    )
+            # print("Preparing data...")
+            contas, df_count, df_pair_count, sparse_matrix = DataPreparer.prepare_dataframe(data_path, year)
 
-    FileManager.save_arrays_to_zip_as_csv([C.toarray(), CC.toarray(), RR_graph, RR_dist, Phi_graph, Phi_dist],
-                                          ['C', 'CC', 'RR_graph', 'RR_dist', 'Phi_graph', 'Phi_dist'],
-                                          output_path)
-    FileManager.save_graphml(G_rr, os.path.join(output_path, 'network_graph_rr.graphml'))
-    FileManager.save_graphml(G_phi, os.path.join(output_path, 'network_graph_phi.graphml'))
-    print("Network saved successfully.")
+            if random_i_d and (df_count['1'] == 0).all():
+                continue
+
+            # Ensuring the output directory exists
+            FileManager.create_dir(output_path)
+
+            # print("Generating co-occurrence network...")
+            if random_i_d:
+                graph_strategy = DefaultGraphRandomStrategy()
+            else:
+                graph_strategy = DefaultGraphStrategy()
+
+            network_generator = NetworkCoOccurrence(graph_strategy)
+
+            # Getting the network
+            C, CC, RR_graph, RR_dist, G_rr, Phi_graph, Phi_dist, G_phi, P, L = network_generator.get_network(
+                labels=contas,
+                occurrences=sparse_matrix,
+                df_count=df_count,
+                df_pair_count=df_pair_count,
+                min_subjects=min_subjects,
+                min_occurrences=min_occurrences,
+                net_type=net_type
+            )
+
+            FileManager.save_arrays_to_zip_as_csv([C.toarray(), CC.toarray(), RR_graph, RR_dist, Phi_graph, Phi_dist],
+                                                  ['C', 'CC', 'RR_graph', 'RR_dist', 'Phi_graph', 'Phi_dist'],
+                                                  output_path)
+            FileManager.save_graphml(G_rr, os.path.join(output_path, 'network_graph_rr.graphml'))
+            FileManager.save_graphml(G_phi, os.path.join(output_path, 'network_graph_phi.graphml'))
+            # print("Network saved successfully.")
