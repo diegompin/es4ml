@@ -198,6 +198,19 @@ class DefaultGraphRandomStrategy(IGraphStrategy):
         }
         nx.set_node_attributes(G, node_attrs)
 
+        edge_attrs = {}
+        for _, row in df_pair_count.iterrows():
+            conta_origem = row['CONTA_ORIGEM']
+            conta_destino = row['CONTA_DESTINO']
+            valor_coluna_1 = row['1']
+
+            if conta_origem in L and conta_destino in L:
+                idx_origem = L.index(conta_origem)
+                idx_destino = L.index(conta_destino)
+                 
+                edge_attrs[(idx_origem, idx_destino)] = {'transacoes_Id_entre_contas': valor_coluna_1}
+        nx.set_edge_attributes(G, edge_attrs)
+
     @staticmethod
     def randomize_attribute(df, column_name):
         column_values = df[column_name].values
@@ -348,7 +361,7 @@ if __name__ == '__main__':
     for net_type in tqdm(net_types, desc='Creating Graphs', unit='Net_Type'):
         for year in tqdm(years, desc='Creating Graphs', unit='Year'):
             output_path = os.path.join(
-                PROJECT_ROOT, f'{net_type}_{min_subjects}_{min_occurrences}_{year}{"_random5" if random_i_d else ""}')
+                PROJECT_ROOT, f'{net_type}_{min_subjects}_{min_occurrences}_{year}{"_random1" if random_i_d else ""}')
 
             # print("Preparing data...")
             contas, df_count, df_pair_count, sparse_matrix = DataPreparer.prepare_dataframe(data_path, year)
