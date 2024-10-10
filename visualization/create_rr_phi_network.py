@@ -51,29 +51,37 @@ class DataPreparer:
             'NUMERO_AGENCIA': 'str',
             'NUMERO_CONTA': 'str',
             'TIPO': 'str',
-            'NOME_TITULAR': 'str',
             'CPF_CNPJ_TITULAR': 'str',
-            'DESCRICAO_LANCAMENTO': 'str',
-            'CNAB': 'str',
+            'NOME_TITULAR': 'str',
             'DATA_LANCAMENTO': 'str',
-            'LOCAL_TRANSACAO': 'str',
-            'VALOR_TRANSACAO': 'float64',
-            'NATUREZA_LANCAMENTO': 'str',
-            'VALOR_SALDO': 'float64',
-            'NATUREZA_SALDO': 'str',
             'CPF_CNPJ_OD': 'str',
             'NOME_PESSOA_OD': 'str',
-            'TIPO_PESSOA_OD': 'str',
+            'CNAB': 'str',
+            'DESCRICAO_LANCAMENTO': 'str',
+            'VALOR_TRANSACAO': 'float64',
+            'NATUREZA_LANCAMENTO': 'str',
+            'I-d': 'str',
+            'I-e': 'str',
+            'IV-n': 'str',
+            'RAMO_ATIVIDADE_1': 'str',
+            'RAMO_ATIVIDADE_2': 'str',
+            'RAMO_ATIVIDADE_3': 'str',
+            'LOCAL_TRANSACAO': 'str',
+            'NUMERO_DOCUMENTO': 'str',
+            'NUMERO_DOCUMENTO_TRANSACAO': 'str',
+            'VALOR_SALDO': 'float64',
+            'NATUREZA_SALDO': 'str',
             'NUMERO_BANCO_OD': 'str',
             'NUMERO_AGENCIA_OD': 'str',
             'NUMERO_CONTA_OD': 'str',
-            'I-d': 'str',
+            'NOME_ENDOSSANTE_CHEQUE': 'str',
+            'DOC_ENDOSSANTE_CHEQUE': 'str',
             'DIA_LANCAMENTO': 'str',
             'MES_LANCAMENTO': 'str',
             'ANO_LANCAMENTO': 'str'
         }
 
-        df = pd.read_csv(os.path.join(data_path, 'pcpe_02.csv'), sep=';', decimal=',', dtype=dtype_dict)
+        df = pd.read_csv(os.path.join(data_path, 'pcpe_03.csv'), sep=';', decimal=',', dtype=dtype_dict)
         df['I-d'] = df['I-d'].fillna('0')
         if year:
             df = df.loc[df['ANO_LANCAMENTO'] == year]
@@ -354,29 +362,26 @@ if __name__ == '__main__':
     data_path = os.path.abspath(os.path.join(PROJECT_ROOT, '../../..', 'pcpe'))
     # year = '2020' # or 'all', '' for all years
     random_i_d = True
+    how_many_randoms = 30
     min_subjects = 5
     min_occurrences = 2
     net_types = ['high', 'less', 'all']  # or 'less', 'all' depending on what type of network you want
-    years = [str(year) for year in range(2015,2023)] #+ ['all']
+    years = [str(year) for year in range(2019,2023)] + ['all']
     for net_type in tqdm(net_types, desc='Creating Graphs', unit='Net_Type'):
         for year in tqdm(years, desc='Creating Graphs', unit='Year'):
             output_path = os.path.join(
-                PROJECT_ROOT, f'{net_type}_{min_subjects}_{min_occurrences}_{year}{"_random1" if random_i_d else ""}')
+                PROJECT_ROOT, f'new-data_{net_type}_{min_subjects}_{min_occurrences}_{year}')
 
             # print("Preparing data...")
             contas, df_count, df_pair_count, sparse_matrix = DataPreparer.prepare_dataframe(data_path, year)
 
-            if random_i_d and (df_count['1'] == 0).all():
-                continue
+
 
             # Ensuring the output directory exists
             FileManager.create_dir(output_path)
 
             # print("Generating co-occurrence network...")
-            if random_i_d:
-                graph_strategy = DefaultGraphRandomStrategy()
-            else:
-                graph_strategy = DefaultGraphStrategy()
+            graph_strategy = DefaultGraphStrategy()
 
             network_generator = NetworkCoOccurrence(graph_strategy)
 
@@ -396,4 +401,18 @@ if __name__ == '__main__':
                                                   output_path)
             FileManager.save_graphml(G_rr, os.path.join(output_path, 'network_graph_rr.graphml'))
             FileManager.save_graphml(G_phi, os.path.join(output_path, 'network_graph_phi.graphml'))
+
+            if random_i_d and (df_count['1'] == 0).all():
+                continue
+
+            if random_i_d:
+                graph_strategy = DefaultGraphRandomStrategy()
+                for i in range(1, how_many_randoms+1):
+
+                    G_rr = graph_strategy.create_graph(RR_graph, P, L, df_count, df_pair_count)
+                    G_phi = graph_strategy.create_graph(Phi_graph, P, L, df_count, df_pair_count)
+
+                    FileManager.save_graphml(G_rr, os.path.join(output_path, f'random{i}_network_graph_rr.graphml'))
+                    FileManager.save_graphml(G_phi, os.path.join(output_path, f'random{i}_network_graph_phi.graphml'))
+
             # print("Network saved successfully.")
