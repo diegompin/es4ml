@@ -13,13 +13,19 @@ class NetworkMetricStrategy(ABC):
         self.year_list = year_list
         self.metric = metric
 
-    def evaluate_network(self, att):
+    def evaluate_network(self, att, random, random_num):
         results = dict()
         for year in self.year_list:
             data_path = os.path.abspath(os.path.join(PROJECT_ROOT, str(year), 'network_graph_phi.graphml'))
             G_phi = nx.read_graphml(data_path)
             metric_result = self.metric(G=G_phi, attribute=att)
             results[year] = metric_result
+            if random:
+                for i in range(1, random_num+1):
+                    data_path = os.path.abspath(os.path.join(PROJECT_ROOT, str(year), f'random{i}_network_graph_phi.graphml'))
+                    G_phi = nx.read_graphml(data_path)
+                    metric_result = self.metric(G=G_phi, attribute=att)
+                    results[f'{year}_random{i}'] = metric_result
         self.results = results
 
     def get_results(self):
@@ -49,22 +55,28 @@ class NetworkAssortativityStrategy(NetworkMetricStrategy):
 
 
 if __name__ == '__main__':
-    years = ['2016', '2018', '2019', '2020', '2021']
     random_i_d = True
+    how_many_randoms = 30
     min_subjects = 5
     min_occurrences = 2
     net_types = ['high', 'less', 'all']
+    years = [str(year) for year in range(2019,2023)] + ['all']
     for net_type in tqdm(net_types, desc='Calculating Metrics', unit='Net_Type'):
-        folders = [f'{net_type}_{min_subjects}_{min_occurrences}_{year}' for year in years]
-        if random_i_d:
-            folders = [item if i == 0 else f"{item}_random{i}" for item in folders for i in range(len(folders) + 1)]
+        folders = [f'new-data_{net_type}_{min_subjects}_{min_occurrences}_{year}' for year in years]
 
-        df_results = pd.DataFrame(columns=['metric'] + folders)
         metric = NetworkAssortativityStrategy(folders)
-        metric.evaluate_network(att="quantity_i-d")
+        metric.evaluate_network(att="quantity_i-d", random=random_i_d, random_num=how_many_randoms)
         results = metric.get_results()
-        results['metric'] = 'Assortativity_quantity_i-d'
-        df_results.loc[len(df_results)] = results
-        df_results.to_csv(f'Assortativity_{net_type}{"_random" if random_i_d else ""}.csv', index=False)
+        df_results = pd.DataFrame(list(results.items()), columns=['network', 'Assortativity_quantity_i-d'])
 
-        print(results)
+        metric.evaluate_network(att="prevalence", random=random_i_d, random_num=how_many_randoms)
+        results = metric.get_results()
+        df_results['Assortativity_prevalence'] = df_results['network'].map(results)
+
+        metric.evaluate_network(att="sum_metric", random=random_i_d, random_num=how_many_randoms)
+        results = metric.get_results()
+        df_results['Assortativity_sum-metric'] = df_results['network'].map(results)
+
+        df_results.to_csv(f'Assortativity_{net_type}.csv', index=False)
+
+        # print(results)
