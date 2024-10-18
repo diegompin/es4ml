@@ -42,8 +42,9 @@ class FileManager:
 class DataPreparer:
     """Handles data preparation for network analysis."""
     @staticmethod
-    def prepare_dataframe(data_path, year=None):
+    def prepare_dataframe(data_path, year=None, typology=None):
         year = '' if year is None or year in ['', 'all'] else year
+        typology = 'I-d' if typology is None else typology
         dtype_dict = {
             'NUMERO_CASO': 'str',
             'NUMERO_BANCO': 'str',
@@ -82,7 +83,7 @@ class DataPreparer:
         }
 
         df = pd.read_csv(os.path.join(data_path, 'pcpe_03.csv'), sep=';', decimal=',', dtype=dtype_dict)
-        df['I-d'] = df['I-d'].fillna('0')
+        df[typology] = df[typology].fillna('0')
         if year:
             df = df.loc[df['ANO_LANCAMENTO'] == year]
 
@@ -97,15 +98,15 @@ class DataPreparer:
         contas_destino = pd.Index(df['CONTA_DESTINO'].unique())
         contas = np.concatenate((contas_origem, contas_destino[~np.isin(contas_destino, contas_origem)])).tolist()
 
-        df_origem = df[['CONTA_ORIGEM', 'I-d']].rename(columns={'CONTA_ORIGEM': 'CONTA'})
-        df_destino = df[['CONTA_DESTINO', 'I-d']].rename(columns={'CONTA_DESTINO': 'CONTA'})
+        df_origem = df[['CONTA_ORIGEM', typology]].rename(columns={'CONTA_ORIGEM': 'CONTA'})
+        df_destino = df[['CONTA_DESTINO', typology]].rename(columns={'CONTA_DESTINO': 'CONTA'})
         df_conta_id = pd.concat([df_origem, df_destino])
 
-        df_count = df_conta_id.groupby(['CONTA', 'I-d']).size().unstack(fill_value=0).reset_index()
+        df_count = df_conta_id.groupby(['CONTA', typology]).size().unstack(fill_value=0).reset_index()
         if '1' not in df_count.columns:
             df_count['1'] = 0
 
-        df_pair_count = df.groupby(['CONTA_ORIGEM', 'CONTA_DESTINO', 'I-d']).size().unstack(fill_value=0).reset_index()
+        df_pair_count = df.groupby(['CONTA_ORIGEM', 'CONTA_DESTINO', typology]).size().unstack(fill_value=0).reset_index()
         if '1' not in df_pair_count.columns:
             df_pair_count['1'] = 0
 
@@ -133,18 +134,18 @@ class DataPreparer:
 class IGraphStrategy(ABC):
     """Interface Segregation: Abstract class for graph generation strategies."""
     @abstractmethod
-    def create_graph(self, matrix, P, L, df_count, df_pair_count):
+    def create_graph(self, matrix, P, L, df_count, df_pair_count, typology):
         pass
 
 
 class DefaultGraphStrategy(IGraphStrategy):
     """Concrete implementation of graph generation."""
-    def create_graph(self, matrix, P, L, df_count, df_pair_count):
+    def create_graph(self, matrix, P, L, df_count, df_pair_count, typology):
         G = nx.from_numpy_array(matrix)
-        self.put_attributes(G, P, L, matrix, df_count, df_pair_count)
+        self.put_attributes(G, P, L, matrix, df_count, df_pair_count, typology)
         return G
 
-    def put_attributes(self, G, P, L, metric, df_count, df_pair_count):
+    def put_attributes(self, G, P, L, metric, df_count, df_pair_count, typology):
         df_count = df_count[df_count['CONTA'].isin(L)]
         # filtered_df_pair_count = df_pair_count[
         #     df_pair_count['CONTA_ORIGEM'].isin(L) | df_pair_count['CONTA_DESTINO'].isin(L)
@@ -157,7 +158,7 @@ class DefaultGraphStrategy(IGraphStrategy):
                 'prevalence': int(P[i]),
                 'sum_metric': float(metric_sums[i]),
                 'label': L[i],
-                'quantity_i-d': int(df_count.loc[df_count['CONTA'] == L[i], '1'].values[0])
+                f'quantity_{typology.lower()}': int(df_count.loc[df_count['CONTA'] == L[i], '1'].values[0])
                 if not df_count[df_count['CONTA'] == L[i]].empty else 0
             }
             for i in G.nodes
@@ -174,18 +175,18 @@ class DefaultGraphStrategy(IGraphStrategy):
                 idx_origem = L.index(conta_origem)
                 idx_destino = L.index(conta_destino)
                  
-                edge_attrs[(idx_origem, idx_destino)] = {'transacoes_Id_entre_contas': valor_coluna_1}
+                edge_attrs[(idx_origem, idx_destino)] = {f'transacoes_{typology.replace("-", "")}_entre_contas': valor_coluna_1}
         nx.set_edge_attributes(G, edge_attrs)
 
 
 class DefaultGraphRandomStrategy(IGraphStrategy):
     """Concrete implementation of graph generation."""
-    def create_graph(self, matrix, P, L, df_count, df_pair_count):
+    def create_graph(self, matrix, P, L, df_count, df_pair_count, typology):
         G = nx.from_numpy_array(matrix)
-        self.put_attributes(G, P, L, matrix, df_count, df_pair_count)
+        self.put_attributes(G, P, L, matrix, df_count, df_pair_count, typology)
         return G
 
-    def put_attributes(self, G, P, L, metric, df_count, df_pair_count):
+    def put_attributes(self, G, P, L, metric, df_count, df_pair_count, typology):
         df_count = df_count[df_count['CONTA'].isin(L)]
         df_count = self.randomize_attribute(df_count, '1')
         # filtered_df_pair_count = df_pair_count[
@@ -199,7 +200,7 @@ class DefaultGraphRandomStrategy(IGraphStrategy):
                 'prevalence': int(P[i]),
                 'sum_metric': float(metric_sums[i]),
                 'label': L[i],
-                'quantity_i-d': int(df_count.loc[df_count['CONTA'] == L[i], '1'].values[0])
+                f'quantity_{typology.lower()}': int(df_count.loc[df_count['CONTA'] == L[i], '1'].values[0])
                 if not df_count[df_count['CONTA'] == L[i]].empty else 0
             }
             for i in G.nodes
@@ -216,7 +217,7 @@ class DefaultGraphRandomStrategy(IGraphStrategy):
                 idx_origem = L.index(conta_origem)
                 idx_destino = L.index(conta_destino)
                  
-                edge_attrs[(idx_origem, idx_destino)] = {'transacoes_Id_entre_contas': valor_coluna_1}
+                edge_attrs[(idx_origem, idx_destino)] = {f'transacoes_{typology.replace("-", "")}_entre_contas': valor_coluna_1}
         nx.set_edge_attributes(G, edge_attrs)
 
     @staticmethod
@@ -239,18 +240,18 @@ class NetworkCoOccurrence:
     def __init__(self, graph_strategy: IGraphStrategy):
         self.graph_strategy = graph_strategy
 
-    def get_network(self, labels, occurrences, df_count, df_pair_count, min_subjects=5, min_occurrences=2, net_type=None):
+    def get_network(self, labels, occurrences, df_count, df_pair_count, min_subjects=5, min_occurrences=2, net_type=None, typology=None):
         C, CC, L = self.get_cooccurrence(occurrences.copy(), labels, min_subjects, min_occurrences)
         N = C.shape[0]
 
         RR_dist, RR_graph = self.calculate_risk_ratio(CC, N, net_type)
 
         P = np.diag(CC.toarray())
-        G_rr = self.graph_strategy.create_graph(RR_graph, P, L, df_count, df_pair_count)
+        G_rr = self.graph_strategy.create_graph(RR_graph, P, L, df_count, df_pair_count, typology)
 
         Phi_dist, Phi_graph = self.calculate_phi(CC, N, net_type)
 
-        G_phi = self.graph_strategy.create_graph(Phi_graph, P, L, df_count, df_pair_count)
+        G_phi = self.graph_strategy.create_graph(Phi_graph, P, L, df_count, df_pair_count, typology)
 
         return C, CC, RR_graph, RR_dist, G_rr, Phi_graph, Phi_dist, G_phi, P, L
 
@@ -362,57 +363,59 @@ if __name__ == '__main__':
     data_path = os.path.abspath(os.path.join(PROJECT_ROOT, '../../..', 'pcpe'))
     # year = '2020' # or 'all', '' for all years
     random_i_d = True
+    typologies = ['I-d', 'I-e', 'IV-n']
     how_many_randoms = 30
     min_subjects = 5
     min_occurrences = 2
-    net_types = ['high', 'less', 'all']  # or 'less', 'all' depending on what type of network you want
-    years = [str(year) for year in range(2019,2023)] + ['all']
-    for net_type in tqdm(net_types, desc='Creating Graphs', unit='Net_Type'):
-        for year in tqdm(years, desc='Creating Graphs', unit='Year'):
-            output_path = os.path.join(
-                PROJECT_ROOT, f'new-data_{net_type}_{min_subjects}_{min_occurrences}_{year}')
+    net_types = ['high']  # or 'less', 'all' depending on what type of network you want
+    years = ['all'] + [str(year) for year in range(2019,2023)]
+    for typology in tqdm(typologies, desc='Creating Graphs Typologies', unit='Typology', position=0):
+        for net_type in tqdm(net_types, desc='Creating Graphs Net_Types', unit='Net_Type', position=1, leave=False):
+            for year in tqdm(years, desc='Creating Graphs Years', unit='Year', position=2, leave=False):
+                output_path = os.path.join(
+                    PROJECT_ROOT, f'new-data_{typology}_{net_type}_{min_subjects}_{min_occurrences}_{year}')
 
-            # print("Preparing data...")
-            contas, df_count, df_pair_count, sparse_matrix = DataPreparer.prepare_dataframe(data_path, year)
+                # print("Preparing data...")
+                contas, df_count, df_pair_count, sparse_matrix = DataPreparer.prepare_dataframe(data_path, year, typology)
 
 
+                # Ensuring the output directory exists
+                FileManager.create_dir(output_path)
 
-            # Ensuring the output directory exists
-            FileManager.create_dir(output_path)
+                # print("Generating co-occurrence network...")
+                graph_strategy = DefaultGraphStrategy()
 
-            # print("Generating co-occurrence network...")
-            graph_strategy = DefaultGraphStrategy()
+                network_generator = NetworkCoOccurrence(graph_strategy)
 
-            network_generator = NetworkCoOccurrence(graph_strategy)
+                # Getting the network
+                C, CC, RR_graph, RR_dist, G_rr, Phi_graph, Phi_dist, G_phi, P, L = network_generator.get_network(
+                    labels=contas,
+                    occurrences=sparse_matrix,
+                    df_count=df_count,
+                    df_pair_count=df_pair_count,
+                    min_subjects=min_subjects,
+                    min_occurrences=min_occurrences,
+                    net_type=net_type,
+                    typology=typology
+                )
 
-            # Getting the network
-            C, CC, RR_graph, RR_dist, G_rr, Phi_graph, Phi_dist, G_phi, P, L = network_generator.get_network(
-                labels=contas,
-                occurrences=sparse_matrix,
-                df_count=df_count,
-                df_pair_count=df_pair_count,
-                min_subjects=min_subjects,
-                min_occurrences=min_occurrences,
-                net_type=net_type
-            )
+                FileManager.save_arrays_to_zip_as_csv([C.toarray(), CC.toarray(), RR_graph, RR_dist, Phi_graph, Phi_dist],
+                                                      ['C', 'CC', 'RR_graph', 'RR_dist', 'Phi_graph', 'Phi_dist'],
+                                                      output_path)
+                FileManager.save_graphml(G_rr, os.path.join(output_path, 'network_graph_rr.graphml'))
+                FileManager.save_graphml(G_phi, os.path.join(output_path, 'network_graph_phi.graphml'))
 
-            FileManager.save_arrays_to_zip_as_csv([C.toarray(), CC.toarray(), RR_graph, RR_dist, Phi_graph, Phi_dist],
-                                                  ['C', 'CC', 'RR_graph', 'RR_dist', 'Phi_graph', 'Phi_dist'],
-                                                  output_path)
-            FileManager.save_graphml(G_rr, os.path.join(output_path, 'network_graph_rr.graphml'))
-            FileManager.save_graphml(G_phi, os.path.join(output_path, 'network_graph_phi.graphml'))
+                if random_i_d and (df_count['1'] == 0).all():
+                    continue
 
-            if random_i_d and (df_count['1'] == 0).all():
-                continue
+                if random_i_d:
+                    graph_strategy = DefaultGraphRandomStrategy()
+                    for i in range(1, how_many_randoms+1):
 
-            if random_i_d:
-                graph_strategy = DefaultGraphRandomStrategy()
-                for i in range(1, how_many_randoms+1):
+                        G_rr = graph_strategy.create_graph(RR_graph, P, L, df_count, df_pair_count, typology)
+                        G_phi = graph_strategy.create_graph(Phi_graph, P, L, df_count, df_pair_count, typology)
 
-                    G_rr = graph_strategy.create_graph(RR_graph, P, L, df_count, df_pair_count)
-                    G_phi = graph_strategy.create_graph(Phi_graph, P, L, df_count, df_pair_count)
+                        FileManager.save_graphml(G_rr, os.path.join(output_path, f'random{i}_network_graph_rr.graphml'))
+                        FileManager.save_graphml(G_phi, os.path.join(output_path, f'random{i}_network_graph_phi.graphml'))
 
-                    FileManager.save_graphml(G_rr, os.path.join(output_path, f'random{i}_network_graph_rr.graphml'))
-                    FileManager.save_graphml(G_phi, os.path.join(output_path, f'random{i}_network_graph_phi.graphml'))
-
-            # print("Network saved successfully.")
+                # print("Network saved successfully.")

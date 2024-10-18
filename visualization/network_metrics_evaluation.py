@@ -56,27 +56,29 @@ class NetworkAssortativityStrategy(NetworkMetricStrategy):
 
 if __name__ == '__main__':
     random_i_d = True
+    typologies = ['I-d', 'I-e', 'IV-n']
     how_many_randoms = 30
     min_subjects = 5
     min_occurrences = 2
-    net_types = ['high', 'less', 'all']
-    years = [str(year) for year in range(2019,2023)] + ['all']
-    for net_type in tqdm(net_types, desc='Calculating Metrics', unit='Net_Type'):
-        folders = [f'new-data_{net_type}_{min_subjects}_{min_occurrences}_{year}' for year in years]
+    net_types = ['high']
+    years = ['all'] + [str(year) for year in range(2019,2023)]
+    for typology in tqdm(typologies, desc='Calculating Metrics', unit='Typology'):
+        for net_type in tqdm(net_types, desc='Calculating Metrics', unit='Net_Type'):
+            folders = [f'new-data_{typology}_{net_type}_{min_subjects}_{min_occurrences}_{year}' for year in years]
 
-        metric = NetworkAssortativityStrategy(folders)
-        metric.evaluate_network(att="quantity_i-d", random=random_i_d, random_num=how_many_randoms)
-        results = metric.get_results()
-        df_results = pd.DataFrame(list(results.items()), columns=['network', 'Assortativity_quantity_i-d'])
+            metric = NetworkAssortativityStrategy(folders)
+            metric.evaluate_network(att=f"quantity_{typology.lower()}", random=random_i_d, random_num=how_many_randoms)
+            results = metric.get_results()
+            df_results = pd.DataFrame(list(results.items()), columns=['network', f'Assortativity_quantity_{typology.lower()}'])
 
-        metric.evaluate_network(att="prevalence", random=random_i_d, random_num=how_many_randoms)
-        results = metric.get_results()
-        df_results['Assortativity_prevalence'] = df_results['network'].map(results)
+            metric.evaluate_network(att="prevalence", random=random_i_d, random_num=how_many_randoms)
+            results = metric.get_results()
+            df_results['Assortativity_prevalence'] = df_results['network'].map(results)
 
-        metric.evaluate_network(att="sum_metric", random=random_i_d, random_num=how_many_randoms)
-        results = metric.get_results()
-        df_results['Assortativity_sum-metric'] = df_results['network'].map(results)
+            metric.evaluate_network(att="sum_metric", random=random_i_d, random_num=how_many_randoms)
+            results = metric.get_results()
+            df_results['Assortativity_sum-metric'] = df_results['network'].map(results)
 
-        df_results.to_csv(f'Assortativity_{net_type}.csv', index=False)
+            df_results.to_csv(f'Assortativity_{typology}_{net_type}.csv', index=False)
 
-        # print(results)
+            # print(results)
