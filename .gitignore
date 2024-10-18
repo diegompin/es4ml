@@ -167,3 +167,4 @@ visualization/outputs/*
 *.cys
 *.png
 *.svg
+nohup.out
