@@ -5,13 +5,15 @@ import cdlib
 from cdlib.viz import plot_network_clusters 
 import os.path
 from cdlib.algorithms import girvan_newman
+from networkx import Graph
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
 
 
 class CommunityManager:
 
-    def __init__(self, cluster:NodeClustering, title):
+    def __init__(self, cluster:NodeClustering,G:Graph, title):
         self.cluster = cluster
+        self.G = G
         self.title = title
 
 
@@ -30,6 +32,12 @@ class CommunityManager:
         self.df_node_aggregation = pd.DataFrame.from_dict(self.aggregation,orient='index')
         output_path = os.path.join(PROJECT_ROOT,f'communities_id/{self.title}.csv')
         self.df_node_aggregation.to_csv(output_path)
+
+    
+    def set_network_community_id(self):
+        nx.set_node_attributes(G=self.G,values=self.aggregation,name='community_id')
+        output_path = os.path.join(PROJECT_ROOT,'communities_id','graph_exports',f'{self.title}_graph.graphml')
+        nx.write_graphml(G=self.G, path=output_path)
 
 
 
