@@ -43,9 +43,24 @@ class CommunityManager:
 
 
 if __name__ == '__main__':
-    network_path = os.path.join(PROJECT_ROOT,'I-d_results_data-2.0/new-data_high_5_2_all/network_graph_phi.graphml')
-    G_network_all = nx.read_graphml(network_path)
-    partition_all = girvan_newman(g_original=G_network_all, level=1)
-    com_man = CommunityManager(cluster=partition_all, title='network_all')
-    com_man.aggregate_nodes()
+    typologies = ['I-d_results_data-2.0','I-e_results_data-2.0','IV-n_results_data-2.0']
+    networks = ['new-data_high_5_2_2019','new-data_high_5_2_2020','new-data_high_5_2_2021','new-data_high_5_2_2022','new-data_high_5_2_all']
+    target_graph = 'network_graph_phi.graphml'
+    for typology in typologies:
+        for network in networks:
+            network_path = os.path.join(PROJECT_ROOT,typology,network, target_graph)
+            G_network = nx.read_graphml(network_path)
+            partition = girvan_newman(g_original=G_network, level=1)
+            title = f"{typology.strip('data-2.0')}{network.replace('new-data_','').replace('_5_2','')}"
+            com_man = CommunityManager(G=G_network, cluster=partition,title= title)
+            com_man.aggregate_nodes()
+            com_man.set_network_community_id()         
+    
+    
+    
+    #network_path = os.path.join(PROJECT_ROOT,'I-d_results_data-2.0/new-data_high_5_2_all/network_graph_phi.graphml')
+    #G_network_all = nx.read_graphml(network_path)
+    #partition_all = girvan_newman(g_original=G_network_all, level=1)
+    #com_man = CommunityManager(cluster=partition_all, title='network_all')
+    #com_man.aggregate_nodes()
 
