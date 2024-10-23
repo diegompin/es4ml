@@ -75,5 +75,4 @@ class NetworkStatisticalAnalysis:
 
 if __name__ == '__main__':
     year_dict = {0:"2019", 1:"2020", 2: "2021", 3:"2022", 4:"All"}
-    
-
+    network_analysis = NetworkStatisticalAnalysis(year_dict=year_dict,network_metric_path='I-d_results_data-2.0/Assortativity_less.csv',attribute="Assortativity_quantity_i-d")
