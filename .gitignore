@@ -161,6 +161,7 @@ cython_debug/
 visualization/outputs/*
 *.zip
 *.graphml
+*.gml
 *.pdf
 *.csv
 *.gephi
