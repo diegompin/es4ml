@@ -179,8 +179,13 @@ class DefaultGraphStrategy(IGraphStrategy):
         nx.set_edge_attributes(G, edge_attrs)
 
         node_betweenness = nx.betweenness_centrality(G, weight=None)
+        node_clustering = nx.clustering(G,weight = None)
+        node_degree = dict(G.degree(weight=None))
+
         nx.set_node_attributes(G, node_betweenness, 'betweenness_node')
-            
+        nx.set_node_attributes(G,node_clustering,'clustering_node')
+        nx.set_node_attributes(G,node_degree,'degree_node')
+
         edge_betweenness = nx.edge_betweenness_centrality(G, weight=None)
         nx.set_edge_attributes(G, edge_betweenness, 'betweenness_edge')
 

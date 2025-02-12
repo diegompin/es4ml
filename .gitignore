@@ -168,3 +168,4 @@ visualization/outputs/*
 *.png
 *.svg
 nohup.out
+*.pdf
